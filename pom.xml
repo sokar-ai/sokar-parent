@@ -1,0 +1,613 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <!-- The one parent every Sokar Maven repository takes: what they share, named once. It names no parent of its
+         own, so a repository needs nothing else before it can build, and it is the first thing a release chain
+         publishes. It uses nothing of another Sokar repository - not the build tools, not sokar-bom. -->
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.fuin.sokar</groupId>
+    <artifactId>sokar-parent</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+    <packaging>pom</packaging>
+    <name>Sokar Parent</name>
+    <description>Sokar - The parent of every Sokar Maven repository (PARENT)</description>
+    <url>https://github.com/sokar-ai/sokar-parent/</url>
+
+    <licenses>
+        <license>
+            <name>GPL-3.0-or-later</name>
+            <url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+            <distribution>repo</distribution>
+            <comments>GNU General Public License v3.0 or later</comments>
+        </license>
+    </licenses>
+
+    <developers>
+        <developer>
+            <id>michael-schnell</id>
+            <email>michael@fuin.org</email>
+            <name>Michael Schnell</name>
+            <url>https://github.com/michael-schnell</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/sokar-ai/sokar-parent/</url>
+        <connection>scm:git:git://github.com/sokar-ai/sokar-parent.git</connection>
+        <developerConnection>scm:git:git@github.com:sokar-ai/sokar-parent.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub Issues</system>
+        <url>https://github.com/sokar-ai/sokar-parent/issues</url>
+    </issueManagement>
+
+    <properties>
+        <!-- What builds: the JDK the enforcer requires, and the release every module compiles for. -->
+        <java.version>25</java.version>
+        <java.release.version>25</java.release.version>
+        <maven.compiler.release>${java.release.version}</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <arguments/>
+        <!-- A snapshot package's local version is stamped with this. -->
+        <maven.build.timestamp.format>yyyyMMdd'T'HHmmss</maven.build.timestamp.format>
+
+        <!-- Nothing is published unless a module opts in, which only what another repository or an outsider builds
+             against does. Read by maven-deploy-plugin and by central-publishing-maven-plugin. This pom opts itself
+             in on the two plugins below instead, so that a child does not inherit it. -->
+        <maven.deploy.skip>true</maven.deploy.skip>
+        <skipPublishing>true</skipPublishing>
+
+        <!-- The Sokar build tools: sokar-release and sokar-machines. -->
+        <sokar.buildtools.version>0.4.2</sokar.buildtools.version>
+
+        <!-- Plugin versions a repository names in its own build. -->
+        <build-helper.version>3.6.1</build-helper.version>
+        <cyclonedx-maven-plugin.version>2.9.3</cyclonedx-maven-plugin.version>
+        <error-prone.version>2.50.0</error-prone.version>
+        <exec-maven-plugin.version>3.6.3</exec-maven-plugin.version>
+        <logchange-maven-plugin.version>1.19.16</logchange-maven-plugin.version>
+        <maven-failsafe-plugin.version>3.5.5</maven-failsafe-plugin.version>
+        <maven-help-plugin.version>3.5.2</maven-help-plugin.version>
+        <jdeb.version>1.14</jdeb.version>
+        <!-- Two different plugins that build an .rpm, each at the version in use: de.dentrassi.maven:rpm, and
+             org.codehaus.mojo:rpm-maven-plugin. Not 'rpm.version': the codehaus plugin takes that property as the
+             package's own version, and every .rpm it built was then 1.13.0 (Agent Matrix, 2026-10-07). -->
+        <dentrassi-rpm.version>1.13.0</dentrassi-rpm.version>
+        <rpm-maven-plugin.version>2.3.0</rpm-maven-plugin.version>
+        <native-maven-plugin.version>1.1.11</native-maven-plugin.version>
+        <nullaway.version>0.14.2</nullaway.version>
+        <!-- More NullAway options for a repository that needs them, such as the fields a framework injects. -->
+        <nullaway.args/>
+
+        <!-- Third-party libraries more than one repository uses. -->
+        <bouncycastle.version>1.85.2</bouncycastle.version>
+        <cucumber.version>7.34.8</cucumber.version>
+        <cyclonedx-core-java.version>9.0.5</cyclonedx-core-java.version>
+        <fuin-bom.version>1.0.2</fuin-bom.version>
+        <!-- 5.14.2 rather than the 5.12.2 the fuin BOM pins: that is the set Cucumber 7.34 is built against, and an
+             acceptance suite does not discover a test without it. Imported as junit-bom, so Jupiter, the platform
+             and the suite engine are one set. -->
+        <junit.version>5.14.2</junit.version>
+        <snakeyaml.version>2.7</snakeyaml.version>
+        <sshj.version>0.40.0</sshj.version>
+    </properties>
+
+    <!-- What every Sokar repository resolves the same way. JUnit as one set, so that Jupiter, the platform and the
+         suite engine agree: an importer whose own BOM pins Jupiter beside a suite from a different platform - as
+         org.fuin:bom does - gets a mixed set the moment the acceptance kit sits between them, and the suite engine
+         dies on a missing method. No other BOM: one decides every version a repository does not name itself, so
+         it is the repository's to choose. A repository's own imports come before these, so one that imports a BOM
+         pinning JUnit imports junit-bom first. -->
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- The build tooling, published from sokar-buildtools on its own version line. -->
+            <dependency>
+                <groupId>org.fuin.sokar</groupId>
+                <artifactId>sokar-machines</artifactId>
+                <version>${sokar.buildtools.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.fuin.sokar</groupId>
+                <artifactId>sokar-release</artifactId>
+                <version>${sokar.buildtools.version}</version>
+            </dependency>
+
+            <!-- What the acceptance kit is built with, so a consumer adding a step of its own
+                 compiles against the same Cucumber and reaches the same machine the same way. -->
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-java</artifactId>
+                <version>${cucumber.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-picocontainer</artifactId>
+                <version>${cucumber.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.cucumber</groupId>
+                <artifactId>cucumber-junit-platform-engine</artifactId>
+                <version>${cucumber.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.hierynomus</groupId>
+                <artifactId>sshj</artifactId>
+                <version>${sshj.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+
+        <pluginManagement>
+
+            <plugins>
+
+                <!-- As org.fuin:pom 2.0.2 manages them, so a repository that took that as its parent builds the same. -->
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jdeps-plugin</artifactId>
+                    <version>3.2.0</version>
+                    <configuration>
+                        <multiRelease>base</multiRelease>
+                        <failOnWarning>true</failOnWarning>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>jdkinternals</goal>
+                                <goal>test-jdkinternals</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jar-plugin</artifactId>
+                    <version>3.5.0</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+
+                <!-- NullAway makes a broken @NullMarked contract a compile error, in main code only: tests pass null on
+                     purpose. Error Prone needs the javac exports a repository's .mvn/jvm.config opens. The lists
+                     append, so a module that adds a processor keeps these. -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.15.0</version>
+                    <configuration>
+                        <release>${java.release.version}</release>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>default-compile</id>
+                            <configuration>
+                                <compilerArgs combine.children="append">
+                                    <arg>-XDcompilePolicy=simple</arg>
+                                    <arg>--should-stop=ifError=FLOW</arg>
+                                    <arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true ${nullaway.args}</arg>
+                                </compilerArgs>
+                                <annotationProcessorPaths combine.children="append">
+                                    <path>
+                                        <groupId>com.google.errorprone</groupId>
+                                        <artifactId>error_prone_core</artifactId>
+                                        <version>${error-prone.version}</version>
+                                    </path>
+                                    <path>
+                                        <groupId>com.uber.nullaway</groupId>
+                                        <artifactId>nullaway</artifactId>
+                                        <version>${nullaway.version}</version>
+                                    </path>
+                                </annotationProcessorPaths>
+                            </configuration>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>3.12.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-javadocs</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.5.5</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>0.8.14</version>
+                    <executions>
+                        <execution>
+                            <id>prepare-agent</id>
+                            <goals>
+                                <goal>prepare-agent</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.felix</groupId>
+                    <artifactId>maven-bundle-plugin</artifactId>
+                    <version>6.0.2</version>
+                    <extensions>true</extensions>
+                    <executions>
+                        <execution>
+                            <id>create-manifest</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>bundle</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <version>3.4.0</version>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar-no-fork</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-release-plugin</artifactId>
+                    <version>3.3.1</version>
+                </plugin>
+
+                <!-- What every Sokar repository adds. -->
+
+                <!-- A repository's root declares this plugin, groupId and artifactId only, and every module it holds
+                     is flattened: a published pom then names no parent, so a consumer needs nothing but the module.
+                     Not run here, since this pom is published as it is - flattening it would drop what it manages. -->
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>flatten-maven-plugin</artifactId>
+                    <version>1.8.0</version>
+                    <configuration>
+                        <flattenMode>oss</flattenMode>
+                        <updatePomFile>true</updatePomFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>flatten</id>
+                            <phase>process-resources</phase>
+                            <goals>
+                                <goal>flatten</goal>
+                            </goals>
+                        </execution>
+                        <execution>
+                            <id>flatten.clean</id>
+                            <phase>clean</phase>
+                            <goals>
+                                <goal>clean</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.1.4</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.sonatype.central</groupId>
+                    <artifactId>central-publishing-maven-plugin</artifactId>
+                    <version>0.10.0</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>exec-maven-plugin</artifactId>
+                    <version>${exec-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-help-plugin</artifactId>
+                    <version>${maven-help-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <version>${maven-failsafe-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>build-helper-maven-plugin</artifactId>
+                    <version>${build-helper.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.cyclonedx</groupId>
+                    <artifactId>cyclonedx-maven-plugin</artifactId>
+                    <version>${cyclonedx-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>dev.logchange</groupId>
+                    <artifactId>logchange-maven-plugin</artifactId>
+                    <version>${logchange-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.vafer</groupId>
+                    <artifactId>jdeb</artifactId>
+                    <version>${jdeb.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>de.dentrassi.maven</groupId>
+                    <artifactId>rpm</artifactId>
+                    <version>${dentrassi-rpm.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.codehaus.mojo</groupId>
+                    <artifactId>rpm-maven-plugin</artifactId>
+                    <version>${rpm-maven-plugin.version}</version>
+                </plugin>
+
+                <plugin>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
+                    <version>${native-maven-plugin.version}</version>
+                </plugin>
+
+            </plugins>
+
+        </pluginManagement>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>3.6.2</version>
+                <executions>
+                    <execution>
+                        <id>enforce-java-and-maven-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <requireJavaVersion>
+                                    <version>${java.version}</version>
+                                    <message>Java ${java.version} or later is required!</message>
+                                </requireJavaVersion>
+                                <requireMavenVersion>
+                                    <version>3.6.0</version>
+                                    <message>Please use at least Maven 3.6.0 as older versions may cause problems with Java 11+</message>
+                                </requireMavenVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- This pom is published; nothing that inherits it is unless it opts in itself. So it opts in on the
+                 two plugins, not inherited, rather than by the properties above, which every child inherits. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <skip>false</skip>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.sonatype.central</groupId>
+                <artifactId>central-publishing-maven-plugin</artifactId>
+                <inherited>false</inherited>
+                <configuration>
+                    <skipPublishing>false</skipPublishing>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </build>
+
+    <reporting>
+
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>3.9.0</version>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+
+        </plugins>
+
+    </reporting>
+
+    <profiles>
+
+        <!-- Publishing to Central, as org.fuin:pom 2.0.2 does it. -->
+        <profile>
+            <id>central-sonatype-release</id>
+
+            <build>
+
+                <plugins>
+
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>properties-maven-plugin</artifactId>
+                        <version>1.3.0</version>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>set-system-properties</goal>
+                                </goals>
+                                <configuration>
+                                    <properties>
+                                        <property>
+                                            <name>gpg.passphrase</name>
+                                            <value>${gpg.passphrase}</value>
+                                        </property>
+                                    </properties>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <version>3.2.8</version>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                                <configuration>
+                                    <gpgArguments>
+                                        <arg>--pinentry-mode</arg>
+                                        <arg>loopback</arg>
+                                    </gpgArguments>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>0.10.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>central-sonatype</publishingServerId>
+                        </configuration>
+                    </plugin>
+
+                </plugins>
+
+            </build>
+
+        </profile>
+
+        <!-- The Sokar tools on one classpath, for a workflow to run them from:
+             'dependency:build-classpath -Pci-tools', then org.fuin.sokar.machines.Main and org.fuin.sokar.release.Main.
+             Nothing in this pom's own build uses them. -->
+        <profile>
+            <id>ci-tools</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.fuin.sokar</groupId>
+                    <artifactId>sokar-machines</artifactId>
+                    <version>${sokar.buildtools.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.fuin.sokar</groupId>
+                    <artifactId>sokar-release</artifactId>
+                    <version>${sokar.buildtools.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+
+        <profile>
+            <id>only-eclipse</id>
+            <activation>
+                <property>
+                    <name>m2e.version</name>
+                </property>
+            </activation>
+            <build>
+                <pluginManagement>
+                    <plugins>
+                        <!-- Eclipse m2e's settings only; no influence on the Maven build itself. -->
+                        <plugin>
+                            <groupId>org.eclipse.m2e</groupId>
+                            <artifactId>lifecycle-mapping</artifactId>
+                            <version>1.0.0</version>
+                            <configuration>
+                                <lifecycleMappingMetadata>
+                                    <pluginExecutions>
+                                        <pluginExecution>
+                                            <pluginExecutionFilter>
+                                                <groupId>org.codehaus.mojo</groupId>
+                                                <artifactId>properties-maven-plugin</artifactId>
+                                                <versionRange>[1.1.0,)</versionRange>
+                                                <goals>
+                                                    <goal>set-system-properties</goal>
+                                                </goals>
+                                            </pluginExecutionFilter>
+                                            <action>
+                                                <ignore/>
+                                            </action>
+                                        </pluginExecution>
+                                        <pluginExecution>
+                                            <pluginExecutionFilter>
+                                                <groupId>org.apache.maven.plugins</groupId>
+                                                <artifactId>maven-jdeps-plugin</artifactId>
+                                                <versionRange>[3.1.2,)</versionRange>
+                                                <goals>
+                                                    <goal>jdkinternals</goal>
+                                                    <goal>test-jdkinternals</goal>
+                                                </goals>
+                                            </pluginExecutionFilter>
+                                            <action>
+                                                <ignore/>
+                                            </action>
+                                        </pluginExecution>
+                                    </pluginExecutions>
+                                </lifecycleMappingMetadata>
+                            </configuration>
+                        </plugin>
+                    </plugins>
+                </pluginManagement>
+            </build>
+        </profile>
+
+    </profiles>
+
+</project>

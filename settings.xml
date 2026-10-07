@@ -1,0 +1,21 @@
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0
+                      http://maven.apache.org/xsd/settings-1.0.0.xsd">
+
+    <!-- Every build here runs with "-s settings.xml", so anything a build needs has to be here. It needs nothing
+         but Central: this pom uses nothing of another Sokar repository. -->
+
+    <servers>
+
+        <!-- Where the central-sonatype-release profile publishes. Values come from the environment; nothing
+             secret is in this file. -->
+        <server>
+            <id>central-sonatype</id>
+            <username>${env.OSS_SONATYPE_USERNAME}</username>
+            <password>${env.OSS_SONATYPE_TOKEN}</password>
+        </server>
+
+    </servers>
+
+</settings>
