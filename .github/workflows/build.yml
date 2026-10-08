@@ -29,6 +29,10 @@ jobs:
       - name: Build
         run: JAVA_HOME="$JAVA_HOME_25_X64" ./mvnw -B -s settings.xml verify
 
+      # What a child inherits under the release profile: the publishing plugin, as an extension, in its own build.
+      - name: A child can publish
+        run: JAVA_HOME="$JAVA_HOME_25_X64" test/child-publishes.sh
+
   deploy:
     name: Publish
     runs-on: ubuntu-latest
@@ -71,4 +75,4 @@ jobs:
           OSS_SONATYPE_TOKEN: ${{ secrets.OSS_SONATYPE_TOKEN }}
           MAVEN_GPG_KEY: ${{ secrets.OSS_SONATYPE_GPG_PRIVATE_KEY }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSS_SONATYPE_GPG_PASSPHRASE }}
-        run: JAVA_HOME="$JAVA_HOME_25_X64" ./mvnw -B -s settings.xml deploy -Pcentral-sonatype-release -Dgpg.signer=bc
+        run: JAVA_HOME="$JAVA_HOME_25_X64" ./mvnw -B -s settings.xml deploy -Pcentral-sonatype-release -Dgpg.signer=bc -Dmaven.deploy.skip=false -DskipPublishing=false

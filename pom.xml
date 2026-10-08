@@ -58,7 +58,8 @@
 
         <!-- Nothing is published unless a module opts in, which only what another repository or an outsider builds
              against does. Read by maven-deploy-plugin and by central-publishing-maven-plugin. This pom opts itself
-             in on the two plugins below instead, so that a child does not inherit it. -->
+             in on its own workflow's command line, so that a child inherits nothing of it: a plugin declared here
+             with inherited false would also take the release profile's declaration of it from every child. -->
         <maven.deploy.skip>true</maven.deploy.skip>
         <skipPublishing>true</skipPublishing>
 
@@ -425,25 +426,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-
-            <!-- This pom is published; nothing that inherits it is unless it opts in itself. So it opts in on the
-                 two plugins, not inherited, rather than by the properties above, which every child inherits. -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-deploy-plugin</artifactId>
-                <inherited>false</inherited>
-                <configuration>
-                    <skip>false</skip>
-                </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.sonatype.central</groupId>
-                <artifactId>central-publishing-maven-plugin</artifactId>
-                <inherited>false</inherited>
-                <configuration>
-                    <skipPublishing>false</skipPublishing>
-                </configuration>
             </plugin>
 
         </plugins>
