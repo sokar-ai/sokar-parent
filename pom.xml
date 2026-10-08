@@ -64,7 +64,7 @@
         <skipPublishing>true</skipPublishing>
 
         <!-- The Sokar build tools: sokar-release and sokar-machines. -->
-        <sokar.buildtools.version>0.4.2</sokar.buildtools.version>
+        <sokar.buildtools.version>0.4.3</sokar.buildtools.version>
 
         <!-- Plugin versions a repository names in its own build. -->
         <build-helper.version>3.6.1</build-helper.version>
