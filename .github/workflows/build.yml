@@ -25,9 +25,9 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # The runner's own Java 25 and Maven: this pom uses no other tool.
+      # The runner's own Java 25, and the Maven the wrapper pins: the runner's Maven is whatever its image carries.
       - name: Build
-        run: JAVA_HOME="$JAVA_HOME_25_X64" mvn -B -s settings.xml verify
+        run: JAVA_HOME="$JAVA_HOME_25_X64" ./mvnw -B -s settings.xml verify
 
   deploy:
     name: Publish
@@ -71,4 +71,4 @@ jobs:
           OSS_SONATYPE_TOKEN: ${{ secrets.OSS_SONATYPE_TOKEN }}
           MAVEN_GPG_KEY: ${{ secrets.OSS_SONATYPE_GPG_PRIVATE_KEY }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.OSS_SONATYPE_GPG_PASSPHRASE }}
-        run: JAVA_HOME="$JAVA_HOME_25_X64" mvn -B -s settings.xml deploy -Pcentral-sonatype-release -Dgpg.signer=bc
+        run: JAVA_HOME="$JAVA_HOME_25_X64" ./mvnw -B -s settings.xml deploy -Pcentral-sonatype-release -Dgpg.signer=bc
