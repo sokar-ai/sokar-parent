@@ -11,7 +11,7 @@
 
     <groupId>org.fuin.sokar</groupId>
     <artifactId>sokar-parent</artifactId>
-    <version>0.1.3</version>
+    <version>0.1.4-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Sokar Parent</name>
     <description>Sokar - The parent of every Sokar Maven repository (PARENT)</description>
