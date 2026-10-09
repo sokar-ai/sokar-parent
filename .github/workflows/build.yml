@@ -1,5 +1,6 @@
 # The parent pom, built on every push and published: a snapshot from main, a release from a tag.
 name: Build
+run-name: "${{ github.workflow }} · ${{ github.ref_name }}: ${{ github.event.head_commit.message || github.event.pull_request.title || github.workflow }}"
 
 on:
   push:
